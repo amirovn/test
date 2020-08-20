@@ -26,6 +26,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class FetchDataCommand extends Command
 {
     private const SOURCE = 'https://trailers.apple.com/trailers/home/rss/newtrailers.rss';
+    private const LAST_ELEMENTS = 10;
 
     /**
      * @var string
@@ -105,28 +106,44 @@ class FetchDataCommand extends Command
             throw new RuntimeException(sprintf('Response status is %d, expected %d', $status, 200));
         }
         $data = $response->getBody()->getContents();
-        $this->processXml($data);
+
+        $this->getLastElemets($data);
 
         $this->logger->info(sprintf('End %s at %s', __CLASS__, (string) date_create()->format(DATE_ATOM)));
 
         return 0;
     }
 
+    private function getLastElemets($data)
+    {
+        $xml = (new \SimpleXMLElement($data))->children();
+
+        if (!property_exists($xml, 'channel')) {
+            $this->logger->info('Could not find \'channel\' element in feed', ['xml' => $xml]);
+
+            throw new RuntimeException('Could not find \'channel\' element in feed');
+        }
+
+        $getLastElements = $xml->channel->item->count() - self::LAST_ELEMENTS;
+        $count = $xml->channel->item->count() - self::LAST_ELEMENTS;
+
+        $this->processXml($data, $count, $getLastElements);
+    }
+
     /**
      * @param string $data
      *
+     * @param int $count
+     * @param int $lastElements
      * @throws \Exception
      */
-    protected function processXml(string $data): void
+    protected function processXml(string $data, int $count, int $lastElements): void
     {
         $xml = (new \SimpleXMLElement($data))->children();
-//        $namespace = $xml->getNamespaces(true)['content'];
-//        dd((string) $xml->channel->item[0]->children($namespace)->encoded);
 
-        if (!property_exists($xml, 'channel')) {
-            throw new RuntimeException('Could not find \'channel\' element in feed');
-        }
-        foreach ($xml->channel->item as $item) {
+        for ($i = $lastElements; $count <= $lastElements; $i++) {
+            $item = $xml->channel->item[$i];
+
             $trailer = $this->getMovie((string) $item->title)
                 ->setTitle((string) $item->title)
                 ->setDescription((string) $item->description)
@@ -169,6 +186,8 @@ class FetchDataCommand extends Command
         }
 
         if (!($item instanceof Movie)) {
+            $this->logger->info('Wrong type!');
+
             throw new RuntimeException('Wrong type!');
         }
 

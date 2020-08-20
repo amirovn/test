@@ -70,6 +70,8 @@ class HomeController
         try {
             $data = $this->twig->render('home/index.html.twig', [
                 'trailers' => $this->fetchData(),
+                'className' => __CLASS__,
+                'methodName' => __METHOD__,
             ]);
         } catch (\Exception $e) {
             throw new HttpBadRequestException($request, $e->getMessage(), $e);

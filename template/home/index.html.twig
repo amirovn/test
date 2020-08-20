@@ -9,6 +9,8 @@
             {% for trailer in trailers %}
                 <tr>
                     <td>{{ trailer.title }}</td>
+                    <td>{{ trailer.date }}</td>
+                    <td><a href="/{{ trailer.id }}">читать</a></td>
                 </tr>
             {% endfor %}
         </table>

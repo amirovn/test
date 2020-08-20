@@ -141,7 +141,7 @@ class FetchDataCommand extends Command
     {
         $xml = (new \SimpleXMLElement($data))->children();
 
-        for ($i = $lastElements; $count <= $lastElements; $i++) {
+        for ($i = $lastElements; $count < $lastElements; $i++) {
             $item = $xml->channel->item[$i];
 
             $trailer = $this->getMovie((string) $item->title)
